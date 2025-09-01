@@ -1,5 +1,5 @@
-# .github/workflows/dora-metrics.yml
-name: DORA Metrics to Splunk
+# .github/workflows/send-dora-metrics.yml
+name: Send DORA Metrics to Splunk
 
 on:
   push:
@@ -11,31 +11,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Install Tunnelmole
-      run: |
-        curl -O https://install.tunnelmole.com/xD345/install && sudo bash install
-
-    - name: Start Tunnelmole
-      run: |
-        tmole 8080 > tmole.log &
-        sleep 5
-        cat tmole.log
-
-    - name: Extract Tunnelmole URL
-      id: get_url
-      run: |
-        URL=$(grep -o 'https://[^ ]*' tmole.log | head -n 1)
-        echo "TMOLE_URL=$URL" >> $GITHUB_ENV
-
     - name: Send DORA metrics to Splunk
       run: |
-        curl -X POST "$SPLUNK_URL" \
+        curl -X POST "$SPLUNK_URL/services/collector/event" \
           -H "Authorization: Splunk $SPLUNK_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"deployment_frequency": 5, "lead_time": 2, "change_failure_rate": 0.1, "mean_time_to_recovery": 30, "source": "${{ env.TMOLE_URL }}"}'
+          -d '{
+                "event": {
+                  "deployment_frequency": 5,
+                  "lead_time": 2,
+                  "change_failure_rate": 0.1,
+                  "mean_time_to_recovery": 30
+                },
+                "sourcetype": "dora_metrics"
+              }'
       env:
         SPLUNK_URL: ${{ secrets.SPLUNK_URL }}
         SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }}
+
+        
