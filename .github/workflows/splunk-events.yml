@@ -10,11 +10,11 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Send log to Splunk (PowerShell)
-        shell: pwsh
+      - name: Send log to Splunk (Windows PowerShell)
+        shell: powershell
         run: |
           $headers = @{
             "Authorization" = "Splunk 466208fe-bb39-482e-bdeb-b7700cbab134"
           }
           $body = '{"event": "GitHub Action triggered"}'
-          Invoke-RestMethod -Uri "https://localhost:8088/services/collector" -Method Post -Headers $headers -Body $body -SkipCertificateCheck
+          Invoke-RestMethod -Uri "http://localhost:8088/services/collector" -Method Post -Headers $headers -Body $body
