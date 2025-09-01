@@ -1,4 +1,5 @@
-name: Send Logs to Splunk
+# .github/workflows/dora-metrics.yml
+name: DORA Metrics to Splunk
 
 on:
   push:
@@ -6,15 +7,35 @@ on:
       - main
 
 jobs:
-  send-to-splunk:
-    runs-on: self-hosted
+  send-metrics:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Send log to Splunk (Windows PowerShell)
-        shell: powershell
-        run: |
-          $headers = @{
-            "Authorization" = "Splunk 466208fe-bb39-482e-bdeb-b7700cbab134"
-          }
-          $body = '{"event": "GitHub Action triggered"}'
-          Invoke-RestMethod -Uri "http://localhost:8088/services/collector" -Method Post -Headers $headers -Body $body
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Tunnelmole
+      run: |
+        curl -O https://install.tunnelmole.com/xD345/install && sudo bash install
+
+    - name: Start Tunnelmole
+      run: |
+        tmole 8080 > tmole.log &
+        sleep 5
+        cat tmole.log
+
+    - name: Extract Tunnelmole URL
+      id: get_url
+      run: |
+        URL=$(grep -o 'https://[^ ]*' tmole.log | head -n 1)
+        echo "TMOLE_URL=$URL" >> $GITHUB_ENV
+
+    - name: Send DORA metrics to Splunk
+      run: |
+        curl -X POST "$SPLUNK_URL" \
+          -H "Authorization: Splunk $SPLUNK_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"deployment_frequency": 5, "lead_time": 2, "change_failure_rate": 0.1, "mean_time_to_recovery": 30, "source": "${{ env.TMOLE_URL }}"}'
+      env:
+        SPLUNK_URL: ${{ secrets.SPLUNK_URL }}
+        SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }}
