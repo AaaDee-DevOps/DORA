@@ -1,5 +1,4 @@
-# .github/workflows/send-dora-metrics.yml
-name: Send DORA Metrics to Splunk
+name: Send Metrics to Splunk
 
 on:
   push:
@@ -9,24 +8,20 @@ on:
 jobs:
   send-metrics:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Send DORA metrics to Splunk
-      run: |
-        curl -X POST "$SPLUNK_URL/services/collector/event" \
-          -H "Authorization: Splunk $SPLUNK_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d '{
-                "event": {
-                  "deployment_frequency": 5,
-                  "lead_time": 2,
-                  "change_failure_rate": 0.1,
-                  "mean_time_to_recovery": 30
-                },
-                "sourcetype": "dora_metrics"
-              }'
-      env:
-        SPLUNK_URL: ${{ secrets.SPLUNK_URL }}
-        SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }}
-
-        
+      - name: Send deployment metric to Splunk
+        run: |
+          curl -X POST ${{ secrets.SPLUNK_OBSERVABILITY_URL }} \
+            -H "Authorization: Bearer ${{ secrets.SPLUNK_OBSERVABILITY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "eventType": "ci_cd_event",
+              "category": "DEPLOYMENT",
+              "timestamp": '"$(date +%s)"',
+              "dimensions": {
+                "workflow": "${{ github.workflow }}",
+                "job": "${{ github.job }}",
+                "status": "success",
+                "repository": "${{ github.repository }}"
+              }
+            }'
