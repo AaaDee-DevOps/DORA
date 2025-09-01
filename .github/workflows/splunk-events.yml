@@ -1,0 +1,17 @@
+name: Send Logs to Splunk
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  send-to-splunk:
+    runs-on: self-hosted
+
+    steps:
+      - name: Send log to Splunk
+        run: |
+          curl -k https://localhost:8088/services/collector \
+            -H "Authorization: 466208fe-bb39-482e-bdeb-b7700cbab134" \
+            -d '{"event": "GitHub Action triggered"}'
