@@ -1,4 +1,4 @@
-name: Send Metrics to Splunk
+name: Report Commits to Splunk
 
 on:
   push:
@@ -6,22 +6,20 @@ on:
       - main
 
 jobs:
-  send-metrics:
+  report-to-splunk:
     runs-on: ubuntu-latest
     steps:
-      - name: Send deployment metric to Splunk
+      - name: Send commit info to Splunk
         run: |
-          curl -X POST ${{ secrets.SPLUNK_OBSERVABILITY_URL }} \
-            -H "Authorization: Bearer ${{ secrets.SPLUNK_OBSERVABILITY_TOKEN }}" \
+          curl -k https://54.227.52.12:8088/services/collector/event \
+            -H "Authorization: Splunk ${{ secrets.SPLUNK_HEC_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "eventType": "ci_cd_event",
-              "category": "DEPLOYMENT",
-              "timestamp": '"$(date +%s)"',
-              "dimensions": {
-                "workflow": "${{ github.workflow }}",
-                "job": "${{ github.job }}",
-                "status": "success",
-                "repository": "${{ github.repository }}"
-              }
+              "event": {
+                "repository": "${{ github.repository }}",
+                "pusher": "${{ github.actor }}",
+                "commit": "${{ github.sha }}",
+                "message": "${{ github.event.head_commit.message }}"
+              },
+              "sourcetype": "_json"
             }'
