@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Send commit info to Splunk
         run: |
-          curl -k https://54.227.52.12:8088/services/collector/event \
+          curl -k https://54.227.95.227:8088/services/collector/event \
             -H "Authorization: Splunk ${{ secrets.SPLUNK_HEC_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{
