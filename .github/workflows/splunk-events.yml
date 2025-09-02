@@ -22,7 +22,9 @@ jobs:
                 "message": "${{ github.event.head_commit.message }}"
               },
               "sourcetype": "_json"
-            }'
+            }
+
+            
 
 
             
